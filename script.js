@@ -120,7 +120,7 @@ const WaterAnimation = {
     // I'm sure there's a more scientific way to calculate them, but that's a task for future me
     this.heightIncreaseSpeed = this.screenHeight / 100 * 1.2;
     this.peakHeight = Math.min(this.screenWidth / 6, 200);
-    this.minPeakHeight = Math.max(this.screenWidth / 80, 10);
+    this.minPeakHeight = Math.max(this.screenWidth / 80, 20);
     this.peakSpeed = this.screenWidth / 100 * 0.4;
 
     // the deacceleration is calculated so that the speed is zero at maxHeight
