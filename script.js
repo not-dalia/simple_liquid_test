@@ -81,20 +81,30 @@ const WaterAnimation = {
     const wavePath = this.calculateSVGWavePath();
     let translateValue = -this.counter * 3 * this.screenWidth / 100 * 0.4;
     translateValue = translateValue % this.screenWidth;
-    let translateY = 0;
+    if (this.translateY == undefined) this.translateY = 0;
 
     // adjusting the y value so that the edge of the wave is always at the same point as currentHeight
     // does this actually improve the animation? who knows
     // also I could just do this when the height is reached, but I'm not sure that's any better
     if (this.isHeightReached) {
       const yValue = findYValueForXOnPath(-translateValue, wavePath);
-      if (yValue) translateY = -yValue + this.currentHeight;
+      if (yValue) {
+        // translateY should converge towards (-yValue + currentHeight)
+        const targetTranslateY = -yValue + this.currentHeight;
+        // we don't want to jump straight to that value, as that makes the animation look a bit jittery
+        // so we slowly move towards it
+        if (Math.abs(this.translateY - targetTranslateY) > 1) {
+          this.translateY += (targetTranslateY - this.translateY) / 10;
+        } else {
+          this.translateY = targetTranslateY;
+        }
+      }
     }
 
     document.querySelector('#wave').setAttribute('d', wavePath);
-    document.querySelector('#wave').setAttribute('transform', `translate(${translateValue} ${translateY})`)
+    document.querySelector('#wave').setAttribute('transform', `translate(${translateValue} ${this.translateY})`)
     document.querySelector('#back-wave').setAttribute('d', wavePath);
-    document.querySelector('#back-wave').setAttribute('transform', `scale (-1, 1) translate(${translateValue + this.screenWidth / 30} ${translateY})`)
+    document.querySelector('#back-wave').setAttribute('transform', `scale (-1, 1) translate(${translateValue + this.screenWidth / 30} ${this.translateY})`)
   },
 
 
@@ -112,6 +122,7 @@ const WaterAnimation = {
     // more consistent animation speed across different devices
     this.frameDuration = 16.6666666667;
     this.counter = 0;
+    this.translateY = 0;
   },
 
 
