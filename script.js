@@ -15,6 +15,13 @@ const WaterAnimation = {
       this.setSVGWavePath();
     });
   },
+
+
+  /**
+   * Generate a set of SVG lines to represent a millilitre scale.
+   * The scale goes from 0 to 100, with 10 major ticks.
+   * @returns {void}
+   */
   generateSVGMillilitreScale () {
     const scale = document.querySelector('#scale');
     scale.innerHTML = '';
@@ -35,11 +42,13 @@ const WaterAnimation = {
     }
   },
 
+
   /**
    * @typedef {Object} ScreenSize
    * @property {number} screenWidth - the width of the screen
    * @property {number} screenHeight - the height of the screen
    */
+
   /**
    * Get the screen size.
    * @returns {ScreenSize} - the screen size
@@ -62,6 +71,7 @@ const WaterAnimation = {
     const path = `M0 ${currentHeight} C${width / 2} ${currentHeight - peakHeight}, ${width / 2} ${currentHeight + peakHeight}, ${width} ${currentHeight}, ${width * 1.5} ${currentHeight - peakHeight}, ${width * 1.5} ${currentHeight + peakHeight}, ${width * 2} ${currentHeight} V${height * 1.5} H0 V${currentHeight * 1.5} Z`;
     return path;
   },
+
 
   /**
    * Set the path of the SVG wave and translate it to generate the wave/liquid animation.
@@ -87,6 +97,7 @@ const WaterAnimation = {
     document.querySelector('#back-wave').setAttribute('transform', `scale (-1, 1) translate(${translateValue + this.screenWidth / 30} ${translateY})`)
   },
 
+
   /**
    * Set the initial animation parameters.
    * @returns {void}
@@ -102,6 +113,7 @@ const WaterAnimation = {
     this.frameDuration = 16.6666666667;
     this.counter = 0;
   },
+
 
   /**
    * Calculate the initial animation parameters based on the screen size.
@@ -122,12 +134,16 @@ const WaterAnimation = {
     // I'm sure there's a more scientific way to calculate them, but that's a task for future me
     this.heightIncreaseSpeed = this.screenHeight / 100 * 1.2;
     this.peakHeight = Math.min(this.screenWidth / 6, 200);
-    this.minPeakHeight = Math.max(this.screenWidth / 80, 20);
-    this.peakSpeed = this.screenWidth / 100 * 0.8;
-
     // the deacceleration is calculated so that the speed is zero at maxHeight
     this.heightSpeedDeacceleration = -Math.pow(this.heightIncreaseSpeed, 2) / (2 * this.heightDiff);
+
+
+    // if the minimum is 0, the waves will go completely still at the end. Keeping a minimum value
+    // above zero means we can keep the waves moving a little bit all the time
+    this.minPeakHeight = Math.max(this.screenWidth / 80, 20);
+    this.peakAttenuationSpeed = this.screenWidth / 100 * 0.8;
   },
+
 
   /**
    * Calculate the new animation parameters based on the new screen size.
@@ -144,7 +160,7 @@ const WaterAnimation = {
     const adjustedPeakHeight = Math.min(this.peakHeight * widthPercentageChange, 100);
     const adjuctedCurrentHeight = this.currentHeight * heightPercentageChange;
     const adjustedMinPeakHeight = Math.min(this.minPeakHeight * widthPercentageChange, 20);
-    const adjustedPeakSpeed = this.peakSpeed * widthPercentageChange;
+    const adjustedPeakSpeed = this.peakAttenuationSpeed * widthPercentageChange;
     this.screenWidth = screenWidth;
     this.screenHeight = screenHeight;
     this.maxHeight = screenHeight * 0.25;
@@ -155,8 +171,9 @@ const WaterAnimation = {
     this.currentHeight = adjuctedCurrentHeight;
     this.peakHeight = adjustedPeakHeight;
     this.minPeakHeight = adjustedMinPeakHeight;
-    this.peakSpeed = adjustedPeakSpeed;
+    this.peakAttenuationSpeed = adjustedPeakSpeed;
   },
+
 
   /**
    * The main animation function.
@@ -174,7 +191,6 @@ const WaterAnimation = {
       return;
     }
     this.previousTimeStamp = timeStamp;
-
 
     this.isHeightReached = false;
     if (this.currentHeight <= this.maxHeight) {
@@ -196,13 +212,13 @@ const WaterAnimation = {
       // now that we've reached maxHeight, we slowly reduce the peak heights
       // until we reach the minimum peak height, just so things look a bit more natural
       if (this.peakHeight > this.minPeakHeight) {
-        this.deacceleration = this.peakSpeed / 10;
-        if (this.peakSpeed < 0.2) {
-          this.peakSpeed = 0.2;
-        } else if (this.peakSpeed > 0.2) {
-          this.peakSpeed = this.peakSpeed - this.deacceleration;
+        this.peakAttenuationAcceleration = this.peakAttenuationSpeed / 10;
+        if (this.peakAttenuationSpeed < 0.2) {
+          this.peakAttenuationSpeed = 0.2;
+        } else if (this.peakAttenuationSpeed > 0.2) {
+          this.peakAttenuationSpeed -= this.peakAttenuationAcceleration;
         }
-        this.peakHeight -= this.peakSpeed;
+        this.peakHeight -= this.peakAttenuationSpeed;
         if (this.peakHeight < this.minPeakHeight) this.peakHeight = this.minPeakHeight;
       }
 
@@ -210,6 +226,8 @@ const WaterAnimation = {
     this.counter++;
     this.animationFrame = requestAnimationFrame((ts) => this.animate(ts));
   },
+
+
   /**
    * Cancel the current animation frame and restart the animation.
    */
@@ -223,10 +241,10 @@ const WaterAnimation = {
   }
 }
 
-WaterAnimation.init();
-document.querySelector('#restart').addEventListener('click', () => {
-  WaterAnimation.restart();
-});
+
+/*********************************************************************************/
+/****************************** UTIL FUNCTIONS ***********************************/
+/*********************************************************************************/
 
 /**
   * Function to calculate y-value for a given x-coordinate on a cubic Bezier curve
@@ -293,3 +311,13 @@ function findYValueForXOnPath(x, pathData) {
 
   return null;
 }
+
+/*********************************************************************************/
+/*************************** END OF UTIL FUNCTIONS *******************************/
+/*********************************************************************************/
+
+
+WaterAnimation.init();
+document.querySelector('#restart').addEventListener('click', () => {
+  WaterAnimation.restart();
+});
