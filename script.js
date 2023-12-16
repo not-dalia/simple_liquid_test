@@ -69,15 +69,17 @@ const WaterAnimation = {
    */
   setSVGWavePath () {
     const wavePath = this.calculateSVGWavePath();
-    let translateValue = -this.counter * this.screenWidth / 100 * 0.4;
+    let translateValue = -this.counter * 3 * this.screenWidth / 100 * 0.4;
     translateValue = translateValue % this.screenWidth;
     let translateY = 0;
 
     // adjusting the y value so that the edge of the wave is always at the same point as currentHeight
     // does this actually improve the animation? who knows
     // also I could just do this when the height is reached, but I'm not sure that's any better
-    const yValue = findYValueForXOnPath(-translateValue, wavePath);
-    translateY = -yValue + this.currentHeight;
+    if (this.isHeightReached) {
+      const yValue = findYValueForXOnPath(-translateValue, wavePath);
+      if (yValue) translateY = -yValue + this.currentHeight;
+    }
 
     document.querySelector('#wave').setAttribute('d', wavePath);
     document.querySelector('#wave').setAttribute('transform', `translate(${translateValue} ${translateY})`)
@@ -121,7 +123,7 @@ const WaterAnimation = {
     this.heightIncreaseSpeed = this.screenHeight / 100 * 1.2;
     this.peakHeight = Math.min(this.screenWidth / 6, 200);
     this.minPeakHeight = Math.max(this.screenWidth / 80, 20);
-    this.peakSpeed = this.screenWidth / 100 * 0.4;
+    this.peakSpeed = this.screenWidth / 100 * 0.8;
 
     // the deacceleration is calculated so that the speed is zero at maxHeight
     this.heightSpeedDeacceleration = -Math.pow(this.heightIncreaseSpeed, 2) / (2 * this.heightDiff);
